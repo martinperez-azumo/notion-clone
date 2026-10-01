@@ -2,7 +2,7 @@
 
 A Notion-style workspace app for Azumo staff, built for the bench upskilling challenge with Claude Code.
 
-- Google sign-in, limited to `azumo.com` and `azumolabs.com` accounts
+- Google sign-in, limited to `azumo.co` and `azumolabs.com` accounts
 - Multiple workspaces with per-workspace roles (owner, admin, editor, viewer)
 - Nested pages with a block editor and file attachments (in progress)
 
@@ -26,7 +26,7 @@ Requires Node.js 20 or newer.
 | `AUTH_SECRET` | Run `npx auth secret` |
 | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google Cloud Console → APIs & Services → Credentials → OAuth client ID (Web application) |
 | `DATABASE_URL` | Neon connection string (set automatically when Neon is added from the Vercel Marketplace) |
-| `ALLOWED_EMAIL_DOMAINS` | Comma-separated, defaults to `azumo.com,azumolabs.com` |
+| `ALLOWED_EMAIL_DOMAINS` | Comma-separated, defaults to `azumo.co,azumolabs.com` |
 
 Google OAuth redirect URIs to register:
 

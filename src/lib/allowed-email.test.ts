@@ -2,21 +2,23 @@ import { describe, expect, it } from "vitest";
 
 import { allowedDomains, isAllowedEmail } from "./allowed-email";
 
-const domains = ["azumo.com", "azumolabs.com"];
+const domains = ["azumo.co", "azumolabs.com"];
 
 describe("isAllowedEmail", () => {
-  it.each(["ana@azumo.com", "ana@azumolabs.com", "Ana@AZUMO.COM"])(
+  it.each(["ana@azumo.co", "ana@azumolabs.com", "Ana@AZUMO.CO"])(
     "accepts %s",
     (email) => expect(isAllowedEmail(email, domains)).toBe(true),
   );
 
   it.each([
     "ana@gmail.com",
-    "ana@evilazumo.com",
-    "ana@azumo.com.evil.io",
-    "ana@mail.azumo.com",
-    "azumo.com",
-    "@azumo.com",
+    "ana@azumo.com",
+    "ana@azumo.co.uk",
+    "ana@evilazumo.co",
+    "ana@azumo.co.evil.io",
+    "ana@mail.azumo.co",
+    "azumo.co",
+    "@azumo.co",
     "",
     null,
     undefined,
@@ -29,8 +31,8 @@ describe("allowedDomains", () => {
   });
 
   it("trims and lowercases a configured list", () => {
-    expect(allowedDomains(" Azumo.com , example.org,")).toEqual([
-      "azumo.com",
+    expect(allowedDomains(" Azumo.co , example.org,")).toEqual([
+      "azumo.co",
       "example.org",
     ]);
   });

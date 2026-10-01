@@ -13,7 +13,7 @@ import {
 
 const ERRORS: Record<string, string> = {
   AccessDenied:
-    "Only Azumo Google accounts (azumo.com or azumolabs.com) can sign in.",
+    "Only Azumo Google accounts (azumo.co or azumolabs.com) can sign in.",
   NoWorkspace: "We couldn't set up your workspace. Try signing in again.",
 };
 

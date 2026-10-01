@@ -1,4 +1,4 @@
-const DEFAULT_DOMAINS = "azumo.com,azumolabs.com";
+const DEFAULT_DOMAINS = "azumo.co,azumolabs.com";
 
 export function allowedDomains(raw = process.env.ALLOWED_EMAIL_DOMAINS) {
   return (raw || DEFAULT_DOMAINS)
