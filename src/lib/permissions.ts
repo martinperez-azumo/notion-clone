@@ -6,7 +6,7 @@ import { cache } from "react";
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { memberships, type Role } from "@/db/schema";
+import { memberships, pages, type Role } from "@/db/schema";
 import { hasRole } from "@/lib/roles";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,4 +45,26 @@ export async function requireRole(workspaceId: string, minRole: Role) {
   if (!membership) notFound();
   if (!hasRole(membership.role, minRole)) throw new ForbiddenError();
   return { userId, role: membership.role };
+}
+
+/** Same as requireRole, for actions that only receive a page id. */
+export async function requirePageRole(pageId: string, minRole: Role) {
+  if (!UUID.test(pageId)) notFound();
+  const [page] = await db
+    .select({
+      id: pages.id,
+      workspaceId: pages.workspaceId,
+      parentId: pages.parentId,
+      archivedAt: pages.archivedAt,
+    })
+    .from(pages)
+    .where(eq(pages.id, pageId))
+    .limit(1);
+  if (!page) notFound();
+  const access = await requireRole(page.workspaceId, minRole);
+  return { ...access, page };
+}
+
+export function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID.test(value);
 }
