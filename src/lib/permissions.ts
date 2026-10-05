@@ -65,6 +65,23 @@ export async function requirePageRole(pageId: string, minRole: Role) {
   return { ...access, page };
 }
 
+/**
+ * Non-throwing page check for route handlers, where notFound() and
+ * redirect() don't apply. Null when the page is missing or the user lacks `minRole`.
+ */
+export async function findPageAccess(pageId: unknown, userId: string, minRole: Role) {
+  if (!isUuid(pageId)) return null;
+  const [page] = await db
+    .select({ id: pages.id, workspaceId: pages.workspaceId, archivedAt: pages.archivedAt })
+    .from(pages)
+    .where(eq(pages.id, pageId))
+    .limit(1);
+  if (!page) return null;
+  const membership = await getMembership(page.workspaceId, userId);
+  if (!hasRole(membership?.role, minRole)) return null;
+  return page;
+}
+
 export function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID.test(value);
 }

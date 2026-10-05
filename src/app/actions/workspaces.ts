@@ -3,11 +3,13 @@
 import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/db";
 import { memberships, workspaces } from "@/db/schema";
 import { type ActionResult, runAction } from "@/lib/action-result";
+import { attachmentUrlsForWorkspace, deleteBlobs } from "@/lib/blob-cleanup";
 import { requireRole, requireUser } from "@/lib/permissions";
 
 const Name = z.string().trim().min(1, "Give the workspace a name.").max(80, "Use 80 characters or fewer.");
@@ -38,7 +40,9 @@ export async function renameWorkspace(workspaceId: string, name: string) {
 export async function deleteWorkspace(workspaceId: string) {
   const result = await runAction(async () => {
     await requireRole(workspaceId, "owner");
+    const files = await attachmentUrlsForWorkspace(workspaceId);
     await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+    after(() => deleteBlobs(files));
   });
   if (result.error) return result;
   redirect("/");

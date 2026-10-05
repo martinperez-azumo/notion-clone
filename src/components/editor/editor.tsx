@@ -10,6 +10,8 @@ import { toast } from "sonner";
 
 import { savePageContent } from "@/app/actions/pages";
 
+import { uploadPageFile } from "./upload";
+
 const SAVE_DELAY_MS = 800;
 
 type Status = "saved" | "unsaved" | "saving" | "error";
@@ -24,6 +26,16 @@ export type EditorProps = {
 export default function Editor({ pageId, initialContent, editable }: EditorProps) {
   const editor = useCreateBlockNote({
     initialContent: initialContent?.length ? initialContent : undefined,
+    uploadFile: editable
+      ? async (file) => {
+          try {
+            return await uploadPageFile(pageId, file);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "The upload failed.");
+            throw e;
+          }
+        }
+      : undefined,
   });
   const [status, setStatus] = useState<Status>("saved");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

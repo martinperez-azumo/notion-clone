@@ -1,13 +1,17 @@
 "use server";
 
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { head } from "@vercel/blob";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 
 import { db } from "@/db";
-import { pages } from "@/db/schema";
+import { attachments, pages } from "@/db/schema";
 import { runAction } from "@/lib/action-result";
+import { attachmentUrlsForPageTree, deleteBlobs } from "@/lib/blob-cleanup";
+import { attachmentUrl, isAllowedContentType, pageUploadPrefix } from "@/lib/file-rules";
 import { isUuid, requirePageRole, requireRole } from "@/lib/permissions";
 
 const Title = z.string().max(200, "Use 200 characters or fewer.");
@@ -134,7 +138,40 @@ export async function deletePage(pageId: string) {
   return runAction(async () => {
     const { page } = await requirePageRole(pageId, "editor");
     if (!page.archivedAt) return "Move the page to the trash first.";
+    const files = await attachmentUrlsForPageTree(page.id);
     await db.delete(pages).where(eq(pages.id, page.id));
+    after(() => deleteBlobs(files));
     refresh();
   });
+}
+
+/**
+ * Records a file the browser just uploaded to Blob (see /api/files/upload) and
+ * returns the permission-checked URL the editor should embed.
+ */
+export async function recordAttachment(pageId: string, blobUrl: string, fileName: string) {
+  let url: string | undefined;
+  const result = await runAction(async () => {
+    const { userId, page } = await requirePageRole(pageId, "editor");
+    if (page.archivedAt) return ARCHIVED;
+    // head() only resolves blobs in our own store, so this also proves where it came from.
+    const blob = await head(blobUrl).catch(() => null);
+    if (!blob || !blob.pathname.startsWith(pageUploadPrefix(page.id))) {
+      return "The uploaded file couldn't be found.";
+    }
+    if (!isAllowedContentType(blob.contentType)) return "That file type isn't allowed.";
+    const [row] = await db
+      .insert(attachments)
+      .values({
+        pageId: page.id,
+        url: blob.url,
+        name: fileName.trim().slice(0, 255) || blob.pathname.split("/").pop() || "file",
+        size: blob.size,
+        mimeType: blob.contentType,
+        uploadedBy: userId,
+      })
+      .returning({ id: attachments.id });
+    url = attachmentUrl(row.id);
+  });
+  return { ...result, url };
 }
