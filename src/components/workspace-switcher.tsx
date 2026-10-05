@@ -15,6 +15,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -47,15 +48,17 @@ export function WorkspaceSwitcher({
           <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-64">
-          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-          {workspaces.map((w) => (
-            <DropdownMenuItem key={w.id} onClick={() => router.push(`/w/${w.id}`)}>
-              <WorkspaceBadge name={w.name} />
-              <span className="flex-1 truncate">{w.name}</span>
-              <span className="text-xs text-muted-foreground capitalize">{w.role}</span>
-              {w.id === current.id && <CheckIcon />}
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+            {workspaces.map((w) => (
+              <DropdownMenuItem key={w.id} onClick={() => router.push(`/w/${w.id}`)}>
+                <WorkspaceBadge name={w.name} />
+                <span className="flex-1 truncate">{w.name}</span>
+                <span className="text-xs text-muted-foreground capitalize">{w.role}</span>
+                {w.id === current.id && <CheckIcon />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setCreating(true)}>
             <PlusIcon />

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,7 +28,9 @@ export function UserMenu({ name, email, image }: Props) {
         <span className="truncate">{name || email}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOutAction()}>
           <LogOutIcon />
