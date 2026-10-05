@@ -35,10 +35,12 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/files/[id]"
   if (!blob || blob.statusCode !== 200) return notFound();
 
   const inline = isInlineContentType(file.mimeType);
+  // No Content-Length: Blob compresses text, fetch() decompresses the stream,
+  // and `blob.size` comes from the compressed response (0 when it's chunked),
+  // so it would truncate the file. Let the response be chunked instead.
   return new Response(blob.stream, {
     headers: {
       "Content-Type": file.mimeType,
-      "Content-Length": String(blob.blob.size),
       "Content-Disposition": `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(file.name)}`,
       "Cache-Control": "private, max-age=3600",
       "X-Content-Type-Options": "nosniff",
