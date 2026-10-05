@@ -32,7 +32,7 @@ Requires Node.js 20 or newer.
 | `AUTH_SECRET` | Any long random string, for example `openssl rand -base64 32` |
 | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google Cloud Console → Google Auth Platform → Clients → Web application |
 | `DATABASE_URL` | Set automatically when Neon is connected from Vercel → Storage |
-| `BLOB_READ_WRITE_TOKEN` | Set automatically when a **private** Blob store is connected from Vercel → Storage |
+| `BLOB_STORE_ID` or `BLOB_READ_WRITE_TOKEN` | Set automatically when a **private** Blob store is connected from Vercel → Storage. New stores use `BLOB_STORE_ID` with Vercel OIDC (`VERCEL_OIDC_TOKEN`, included by `vercel env pull`) |
 | `ALLOWED_EMAIL_DOMAINS` | Optional. Comma-separated; defaults to `azumo.co,azumolabs.com` |
 
 Google OAuth redirect URIs to register:
@@ -89,7 +89,7 @@ scripts/seed-demo.mts      Demo content
 
 ### Files
 
-1. The editor asks `POST /api/files/upload` for an upload token. The route checks that the user is an editor of the page, then issues a token limited to that page's folder (`pages/<pageId>/`), an allowlist of file types (no HTML or SVG) and 25 MB.
+1. The editor asks `POST /api/files/upload` for a presigned upload URL. The route checks that the user is an editor of the page, then signs a token for that one pathname inside the page's folder (`pages/<pageId>/`), limited to an allowlist of file types (no HTML or SVG) and 25 MB, valid for 10 minutes.
 2. The browser uploads straight to the **private** Blob store, so large files never pass through a serverless function.
 3. The `recordAttachment` server action confirms the file is in our store under that page's folder and saves it to `attachments`.
 4. The editor embeds `/api/files/<attachmentId>`. That route checks workspace membership on every request and streams the file, inline for images, PDFs and media and as a download for everything else.

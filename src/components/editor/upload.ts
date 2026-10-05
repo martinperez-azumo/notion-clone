@@ -1,4 +1,4 @@
-import { upload } from "@vercel/blob/client";
+import { uploadPresigned } from "@vercel/blob/client";
 
 import { recordAttachment } from "@/app/actions/pages";
 import {
@@ -23,11 +23,13 @@ export async function uploadPageFile(pageId: string, file: File): Promise<string
 
   let blobUrl: string;
   try {
-    const blob = await upload(pageUploadPrefix(pageId) + safeFileName(file.name), file, {
+    // The random prefix keeps names unique, so nothing is ever overwritten;
+    // the server signs exactly this pathname.
+    const pathname = `${pageUploadPrefix(pageId)}${crypto.randomUUID()}-${safeFileName(file.name)}`;
+    const blob = await uploadPresigned(pathname, file, {
       access: "private",
       handleUploadUrl: "/api/files/upload",
       clientPayload: pageId,
-      multipart: file.size > 5 * 1024 * 1024,
     });
     blobUrl = blob.url;
   } catch (e) {

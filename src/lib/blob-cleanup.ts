@@ -30,11 +30,19 @@ export async function attachmentUrlsForWorkspace(workspaceId: string) {
 }
 
 /**
+ * True when a Blob store is connected: either a read-write token, or a store
+ * id used with the Vercel OIDC token (the default for newly connected stores).
+ */
+export function isBlobConfigured() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+}
+
+/**
  * Best-effort removal of files whose rows were already deleted. A failure
  * leaves an orphaned file in the store, never a broken page, so it's only logged.
  */
 export async function deleteBlobs(urls: string[]) {
-  if (urls.length === 0 || !process.env.BLOB_READ_WRITE_TOKEN) return;
+  if (urls.length === 0 || !isBlobConfigured()) return;
   try {
     for (let i = 0; i < urls.length; i += 500) await del(urls.slice(i, i + 500));
   } catch (e) {

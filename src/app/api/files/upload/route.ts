@@ -1,26 +1,34 @@
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { issueSignedToken } from "@vercel/blob";
+import { handleUploadPresigned, type HandleUploadPresignedBody } from "@vercel/blob/client";
 
 import { auth } from "@/auth";
+import { isBlobConfigured } from "@/lib/blob-cleanup";
 import { ALLOWED_CONTENT_TYPES, MAX_FILE_BYTES, pageUploadPrefix } from "@/lib/file-rules";
 import { findPageAccess } from "@/lib/permissions";
 
 class UploadDenied extends Error {}
 
+const TOKEN_TTL_MS = 10 * 60 * 1000;
+
 /**
- * Issues short-lived tokens so the browser can upload straight to the private
- * Blob store. The token is scoped to one page's folder, the allowed types and
- * the size limit; the file is recorded afterwards by `recordAttachment`.
+ * Hands the browser a presigned URL to upload one file straight to the
+ * private Blob store. The signed token is scoped to that exact pathname
+ * (inside the page's folder), the allowed types and the size limit. The file
+ * is recorded afterwards by `recordAttachment`.
+ *
+ * Presigned uploads work with both store credentials: a read-write token or
+ * Vercel OIDC + BLOB_STORE_ID (what newly connected stores get).
  */
 export async function POST(request: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!isBlobConfigured()) {
     return Response.json({ error: "File uploads aren't set up yet." }, { status: 503 });
   }
-  const body = (await request.json()) as HandleUploadBody;
+  const body = (await request.json()) as HandleUploadPresignedBody;
   try {
-    const result = await handleUpload({
+    const result = await handleUploadPresigned({
       body,
       request,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
+      getSignedToken: async (pathname, clientPayload) => {
         const userId = (await auth())?.user?.id;
         if (!userId) throw new UploadDenied("Your session expired. Sign in again.");
         const page = await findPageAccess(clientPayload, userId, "editor");
@@ -30,11 +38,13 @@ export async function POST(request: Request) {
         if (!pathname.startsWith(prefix) || pathname.slice(prefix.length).includes("/")) {
           throw new UploadDenied("Invalid upload path.");
         }
-        return {
+        const limits = {
           allowedContentTypes: ALLOWED_CONTENT_TYPES,
           maximumSizeInBytes: MAX_FILE_BYTES,
-          addRandomSuffix: true,
+          validUntil: Date.now() + TOKEN_TTL_MS,
         };
+        const token = await issueSignedToken({ pathname, operations: ["put"], ...limits });
+        return { token, urlOptions: { ...limits, allowOverwrite: false } };
       },
     });
     return Response.json(result);
